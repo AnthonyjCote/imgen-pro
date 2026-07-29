@@ -17,6 +17,7 @@
   export let onUseAsset: (asset: GeneratedAsset) => void;
 
   const sizePresets = [
+    { label: "Smoke test", width: 256, height: 256 },
     { label: "Square", width: 768, height: 768 },
     { label: "Web hero", width: 1024, height: 576 },
     { label: "Wide banner", width: 1152, height: 512 },

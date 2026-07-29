@@ -135,10 +135,10 @@ The current known-good local smoke-test setup is:
 - Diffusion model: `/Users/dev/DEV_TOOLS/MODELS_IMG/z_image_turbo-Q2_K.gguf`
 - VAE: `/Users/dev/DEV_TOOLS/MODELS_IMG/vae/ae.sft`
 - LLM image text encoder: `/Users/dev/DEV_TOOLS/MODELS_IMG/text_encoders/Qwen3-4B-Instruct-2507-Q4_K_M.gguf`
-- Backend target: `Vulkan / MoltenVK` for the first GPU smoke test, or `CPU fallback` if the GPU run fails
+- Backend target: `Vulkan / MoltenVK` for segmented GPU streaming, or `CPU fallback` if the GPU run fails
 - Extra CLI arguments: `--cfg-scale 1.0 --sampling-method euler`
 
-The Vulkan/MoltenVK build sees the Radeon GPU. A 256x256, one-step Z-Image run successfully placed the diffusion model on VRAM and produced a PNG in about 69 seconds. CPU fallback also produced a valid 256x256 PNG in about 46 seconds. Treat 512x512 and higher-step GPU tests as the next stability ladder rather than the first test.
+The Vulkan/MoltenVK build sees the Radeon GPU. A full-resident 256x256, one-step Z-Image run successfully placed the diffusion model on VRAM and produced a PNG in about 69 seconds, but larger full-resident GPU jobs can trip `vk::DeviceLostError`. The app's Vulkan preset therefore uses segmented streaming with a 1.5 GiB Vulkan budget. That produced a 512x512, one-step PNG without crashing, but took about 224 seconds. CPU fallback produced a recognizable 256x256 PNG in about 46 seconds. Treat 512x512 and higher-step GPU tests as a stability ladder rather than the first test.
 
 ## Local automation API
 

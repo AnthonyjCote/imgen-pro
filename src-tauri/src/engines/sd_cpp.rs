@@ -179,7 +179,11 @@ fn build_backend_args(preference: &BackendPreference) -> Vec<String> {
             "--backend".to_string(),
             "diffusion=vulkan0,te=cpu,vae=cpu".to_string(),
             "--params-backend".to_string(),
-            "diffusion=vulkan0,te=cpu,vae=cpu".to_string(),
+            "diffusion=cpu,te=cpu,vae=cpu".to_string(),
+            "--offload-to-cpu".to_string(),
+            "--max-vram".to_string(),
+            "vulkan0=1.5".to_string(),
+            "--stream-layers".to_string(),
         ],
         BackendPreference::Metal => vec![
             "--backend".to_string(),

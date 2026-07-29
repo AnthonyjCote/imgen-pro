@@ -42,9 +42,9 @@
     prompt: "",
     negative_prompt: "blurry, distorted text, malformed product, low detail",
     model_id: "primary-model",
-    width: 768,
-    height: 768,
-    steps: 4,
+    width: 256,
+    height: 256,
+    steps: 1,
     seed: null,
     loras: []
   };
