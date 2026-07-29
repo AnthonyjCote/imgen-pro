@@ -60,10 +60,7 @@ async fn health() -> impl IntoResponse {
     Json(json!({ "ok": true, "service": "imgen-pro" }))
 }
 
-async fn capabilities(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> impl IntoResponse {
+async fn capabilities(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
     if !authorized(&state, &headers) {
         return unauthorized();
     }
@@ -94,7 +91,10 @@ async fn get_job(
     }
     match state.get_job(&id) {
         Some(job) => ok(json!(job)),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "error": "Job not found" }))),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "Job not found" })),
+        ),
     }
 }
 
