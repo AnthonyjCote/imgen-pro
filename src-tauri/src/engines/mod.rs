@@ -47,7 +47,9 @@ pub(super) fn validate_model_paths(model: &ModelProfile) -> Result<(), String> {
     let has_complete_model = !model.model_path.trim().is_empty();
     let has_diffusion_model = !model.diffusion_model_path.trim().is_empty();
     if !has_complete_model && !has_diffusion_model {
-        return Err("Configure either a complete model path or a diffusion model path.".to_string());
+        return Err(
+            "Configure either a complete model path or a diffusion model path.".to_string(),
+        );
     }
 
     for (label, path) in [
@@ -58,7 +60,9 @@ pub(super) fn validate_model_paths(model: &ModelProfile) -> Result<(), String> {
         ("T5XXL", model.t5xxl_path.as_str()),
     ] {
         if !path.trim().is_empty() && !std::path::Path::new(path).is_file() {
-            return Err(format!("The configured {label} file does not exist: {path}"));
+            return Err(format!(
+                "The configured {label} file does not exist: {path}"
+            ));
         }
     }
     Ok(())
