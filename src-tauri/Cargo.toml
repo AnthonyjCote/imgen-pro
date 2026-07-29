@@ -1,0 +1,24 @@
+[package]
+name = "imgen-pro"
+version = "0.1.0"
+description = "Local-first image generation and hybrid marketing design studio"
+authors = ["Anthony Cote"]
+edition = "2021"
+
+[lib]
+name = "imgen_pro_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+axum = "0.8"
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde", "clock"] }
+mime_guess = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+tokio = { version = "1", features = ["fs", "macros", "net", "process", "rt-multi-thread", "sync", "time"] }
+uuid = { version = "1", features = ["serde", "v4"] }
