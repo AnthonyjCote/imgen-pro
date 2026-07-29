@@ -23,14 +23,17 @@ pub fn render(state: &AppState, request: DesignRequest) -> Result<GeneratedAsset
         .designs
         .join(format!("{output_name}-{asset_id}.svg"));
 
-    let image_layer = embedded_image_layer(&request.background_image_path, request.width, request.height)?;
+    let image_layer = embedded_image_layer(
+        &request.background_image_path,
+        request.width,
+        request.height,
+    )?;
     let svg = match request.template.as_str() {
         "web-hero" => web_hero_svg(&request, &image_layer),
         _ => feature_poster_svg(&request, &image_layer),
     };
 
-    fs::write(&output_path, svg)
-        .map_err(|error| format!("Unable to write SVG design: {error}"))?;
+    fs::write(&output_path, svg).map_err(|error| format!("Unable to write SVG design: {error}"))?;
 
     Ok(GeneratedAsset {
         id: asset_id,
@@ -63,8 +66,8 @@ fn embedded_image_layer(path: &str, width: u32, height: u32) -> Result<String, S
         return Err(format!("Background image does not exist: {path}"));
     }
 
-    let bytes = fs::read(source)
-        .map_err(|error| format!("Unable to read background image: {error}"))?;
+    let bytes =
+        fs::read(source).map_err(|error| format!("Unable to read background image: {error}"))?;
     let mime = mime_guess::from_path(source)
         .first_or_octet_stream()
         .essence_str()
