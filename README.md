@@ -120,10 +120,25 @@ The adapter supports these profile fields:
 - VAE (`--vae`)
 - CLIP-L (`--clip_l`)
 - T5XXL/text encoder (`--t5xxl`)
+- LLM image text encoder (`--llm`)
 - LoRA directory (`--lora-model-dir`)
+- Backend target (`--backend`, `--params-backend`, and CPU offload presets)
 - Additional model-specific CLI arguments
 
 The frontend submits normalized generation requests and does not construct shell commands.
+
+### Local Z-Image smoke test on the Intel Mac
+
+The current known-good local smoke-test setup is:
+
+- `sd-cli`: `/Users/dev/DEV_TOOLS/stable-diffusion.cpp/build-vulkan/bin/sd-cli`
+- Diffusion model: `/Users/dev/DEV_TOOLS/MODELS_IMG/z_image_turbo-Q2_K.gguf`
+- VAE: `/Users/dev/DEV_TOOLS/MODELS_IMG/vae/ae.sft`
+- LLM image text encoder: `/Users/dev/DEV_TOOLS/MODELS_IMG/text_encoders/Qwen3-4B-Instruct-2507-Q4_K_M.gguf`
+- Backend target: `Vulkan / MoltenVK` for the first GPU smoke test, or `CPU fallback` if the GPU run fails
+- Extra CLI arguments: `--cfg-scale 1.0 --sampling-method euler`
+
+The Vulkan/MoltenVK build sees the Radeon GPU. A 256x256, one-step Z-Image run successfully placed the diffusion model on VRAM and produced a PNG in about 69 seconds. CPU fallback also produced a valid 256x256 PNG in about 46 seconds. Treat 512x512 and higher-step GPU tests as the next stability ladder rather than the first test.
 
 ## Local automation API
 

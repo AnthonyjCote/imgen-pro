@@ -5,8 +5,8 @@ use uuid::Uuid;
 
 use crate::{
     models::{
-        AssetKind, EngineConfig, EngineMode, EngineProbe, GeneratedAsset, GenerationRequest,
-        LoraProfile, ModelProfile,
+        AssetKind, BackendPreference, EngineConfig, EngineMode, EngineProbe, GeneratedAsset,
+        GenerationRequest, LoraProfile, ModelProfile,
     },
     state::AppState,
 };
@@ -70,6 +70,7 @@ pub async fn generate(
     let asset_id = Uuid::new_v4().to_string();
     let output_path = state.paths().outputs.join(format!("{asset_id}.png"));
     let mut args = build_model_args(model);
+    args.extend(build_backend_args(&engine.backend));
     let prompt = prompt_with_loras(request, &engine.loras, model)?;
 
     args.extend([
@@ -165,7 +166,35 @@ fn build_model_args(model: &ModelProfile) -> Vec<String> {
     if !model.t5xxl_path.trim().is_empty() {
         args.extend(["--t5xxl".to_string(), model.t5xxl_path.clone()]);
     }
+    if !model.llm_path.trim().is_empty() {
+        args.extend(["--llm".to_string(), model.llm_path.clone()]);
+    }
     args
+}
+
+fn build_backend_args(preference: &BackendPreference) -> Vec<String> {
+    match preference {
+        BackendPreference::Auto => Vec::new(),
+        BackendPreference::Vulkan => vec![
+            "--backend".to_string(),
+            "diffusion=vulkan0,te=cpu,vae=cpu".to_string(),
+            "--params-backend".to_string(),
+            "diffusion=vulkan0,te=cpu,vae=cpu".to_string(),
+        ],
+        BackendPreference::Metal => vec![
+            "--backend".to_string(),
+            "diffusion=MTL0,te=cpu,vae=cpu".to_string(),
+            "--params-backend".to_string(),
+            "diffusion=MTL0,te=cpu,vae=cpu".to_string(),
+        ],
+        BackendPreference::Cpu => vec![
+            "--backend".to_string(),
+            "all=CPU".to_string(),
+            "--params-backend".to_string(),
+            "all=CPU".to_string(),
+            "--offload-to-cpu".to_string(),
+        ],
+    }
 }
 
 fn prompt_with_loras(

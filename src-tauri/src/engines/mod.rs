@@ -58,6 +58,7 @@ pub(super) fn validate_model_paths(model: &ModelProfile) -> Result<(), String> {
         ("VAE", model.vae_path.as_str()),
         ("CLIP-L", model.clip_l_path.as_str()),
         ("T5XXL", model.t5xxl_path.as_str()),
+        ("LLM text encoder", model.llm_path.as_str()),
     ] {
         if !path.trim().is_empty() && !std::path::Path::new(path).is_file() {
             return Err(format!(

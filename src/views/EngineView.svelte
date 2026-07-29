@@ -78,7 +78,10 @@
             <label class="field"><span>VAE path</span><input bind:value={activeModel.vae_path} /></label>
             <label class="field"><span>CLIP-L path</span><input bind:value={activeModel.clip_l_path} /></label>
           </div>
-          <label class="field"><span>T5XXL / text encoder path</span><input bind:value={activeModel.t5xxl_path} /></label>
+          <div class="field-grid two">
+            <label class="field"><span>T5XXL text encoder path</span><input bind:value={activeModel.t5xxl_path} /></label>
+            <label class="field"><span>LLM image text encoder path</span><input bind:value={activeModel.llm_path} /></label>
+          </div>
           <label class="field"><span>LoRA directory</span><input bind:value={activeModel.lora_directory} /></label>
           <label class="field">
             <span>Extra CLI arguments</span>

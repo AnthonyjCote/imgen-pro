@@ -22,6 +22,7 @@ export interface ModelProfile {
   vae_path: string;
   clip_l_path: string;
   t5xxl_path: string;
+  llm_path: string;
   lora_directory: string;
   extra_args: string[];
   default_steps: number;

@@ -46,6 +46,8 @@ pub struct ModelProfile {
     pub vae_path: String,
     pub clip_l_path: String,
     pub t5xxl_path: String,
+    #[serde(default)]
+    pub llm_path: String,
     pub lora_directory: String,
     pub extra_args: Vec<String>,
     pub default_steps: u32,
@@ -117,6 +119,7 @@ impl Default for AppConfig {
                     vae_path: String::new(),
                     clip_l_path: String::new(),
                     t5xxl_path: String::new(),
+                    llm_path: String::new(),
                     lora_directory: String::new(),
                     extra_args: Vec::new(),
                     default_steps: 4,
