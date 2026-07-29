@@ -1,5 +1,6 @@
 export type EngineMode = "mock" | "stable_diffusion_cpp";
 export type BackendPreference = "auto" | "vulkan" | "metal" | "cpu";
+export type TextProviderMode = "disabled" | "openai_compatible";
 export type JobStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
 export type AssetKind = "image" | "video" | "design";
 
@@ -35,6 +36,15 @@ export interface EngineConfig {
   loras: LoraProfile[];
 }
 
+export interface TextModelConfig {
+  mode: TextProviderMode;
+  base_url: string;
+  model: string;
+  api_key: string;
+  temperature: number;
+  max_tokens: number;
+}
+
 export interface AutomationConfig {
   enabled: boolean;
   port: number;
@@ -43,6 +53,7 @@ export interface AutomationConfig {
 
 export interface AppConfig {
   engine: EngineConfig;
+  text_model: TextModelConfig;
   automation: AutomationConfig;
 }
 
@@ -91,6 +102,30 @@ export interface EngineProbe {
   output: string;
 }
 
+export interface TextModelProbe {
+  ready: boolean;
+  base_url: string;
+  summary: string;
+  output: string;
+}
+
+export interface CreativeBriefRequest {
+  brief: string;
+  template: string;
+  width: number;
+  height: number;
+}
+
+export interface CreativePlan {
+  template: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  image_prompt: string;
+  negative_prompt: string;
+}
+
 export interface DesignRequest {
   template: string;
   title: string;
@@ -114,6 +149,7 @@ export interface CapabilitySummary {
   video_generation: boolean;
   loras: boolean;
   svg_composition: boolean;
+  text_design_generation: boolean;
   automation_api: boolean;
   engine_mode: EngineMode;
 }
