@@ -6,10 +6,12 @@ use tauri::State;
 use crate::{
     automation, design, engines, jobs,
     models::{
-        AppConfig, AutomationStatus, CapabilitySummary, DesignRequest, EngineProbe, GeneratedAsset,
-        GenerationJob, GenerationRequest,
+        AppConfig, AutomationStatus, CapabilitySummary, CreativeBriefRequest, CreativePlan,
+        DesignRequest, EngineProbe, GeneratedAsset, GenerationJob, GenerationRequest,
+        TextModelProbe, TextProviderMode,
     },
     state::AppState,
+    text_model,
 };
 
 #[tauri::command]
@@ -31,6 +33,7 @@ pub fn get_capabilities(state: State<AppState>) -> CapabilitySummary {
         video_generation: false,
         loras: true,
         svg_composition: true,
+        text_design_generation: config.text_model.mode != TextProviderMode::Disabled,
         automation_api: true,
         engine_mode: config.engine.mode,
     }
@@ -62,6 +65,19 @@ pub fn cancel_job(id: String, state: State<AppState>) -> Result<bool, String> {
 #[tauri::command]
 pub async fn probe_engine(state: State<'_, AppState>) -> Result<EngineProbe, String> {
     engines::probe(&state.config().engine).await
+}
+
+#[tauri::command]
+pub async fn probe_text_model(state: State<'_, AppState>) -> Result<TextModelProbe, String> {
+    text_model::probe(&state.config().text_model).await
+}
+
+#[tauri::command]
+pub async fn generate_creative_plan(
+    request: CreativeBriefRequest,
+    state: State<'_, AppState>,
+) -> Result<CreativePlan, String> {
+    text_model::generate_plan(&state.config().text_model, request).await
 }
 
 #[tauri::command]
@@ -105,6 +121,20 @@ fn validate_config(config: &AppConfig) -> Result<(), String> {
         .any(|model| model.id == config.engine.active_model_id)
     {
         return Err("The active model ID does not match a model profile.".to_string());
+    }
+    if config.text_model.mode != TextProviderMode::Disabled {
+        if config.text_model.base_url.trim().is_empty() {
+            return Err("Local text model base URL cannot be empty.".to_string());
+        }
+        if config.text_model.model.trim().is_empty() {
+            return Err("Local text model name cannot be empty.".to_string());
+        }
+        if !(0.0..=2.0).contains(&config.text_model.temperature) {
+            return Err("Local text model temperature must be between 0 and 2.".to_string());
+        }
+        if !(64..=8_192).contains(&config.text_model.max_tokens) {
+            return Err("Local text model max tokens must be between 64 and 8192.".to_string());
+        }
     }
     if config.automation.port == 0 {
         return Err("Automation port must be greater than zero.".to_string());
