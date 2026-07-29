@@ -78,7 +78,8 @@ pub fn read_asset_preview(path: String, state: State<AppState>) -> Result<String
     if !state.is_path_inside_app_data(&path) {
         return Err("Asset preview path is outside the Imgen Pro data directory.".to_string());
     }
-    let bytes = fs::read(&path).map_err(|error| format!("Unable to read asset preview: {error}"))?;
+    let bytes =
+        fs::read(&path).map_err(|error| format!("Unable to read asset preview: {error}"))?;
     let mime = mime_guess::from_path(&path)
         .first_or_octet_stream()
         .essence_str()
