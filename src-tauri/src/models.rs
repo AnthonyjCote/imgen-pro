@@ -18,6 +18,13 @@ pub enum BackendPreference {
     Cpu,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum TextProviderMode {
+    Disabled,
+    OpenAiCompatible,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoraProfile {
     pub id: String,
@@ -54,6 +61,29 @@ pub struct EngineConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextModelConfig {
+    pub mode: TextProviderMode,
+    pub base_url: String,
+    pub model: String,
+    pub api_key: String,
+    pub temperature: f32,
+    pub max_tokens: u32,
+}
+
+impl Default for TextModelConfig {
+    fn default() -> Self {
+        Self {
+            mode: TextProviderMode::OpenAiCompatible,
+            base_url: "http://127.0.0.1:8080/v1".to_string(),
+            model: "local-model".to_string(),
+            api_key: String::new(),
+            temperature: 0.7,
+            max_tokens: 700,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AutomationConfig {
     pub enabled: bool,
     pub port: u16,
@@ -63,6 +93,8 @@ pub struct AutomationConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub engine: EngineConfig,
+    #[serde(default)]
+    pub text_model: TextModelConfig,
     pub automation: AutomationConfig,
 }
 
@@ -90,6 +122,7 @@ impl Default for AppConfig {
                 }],
                 loras: Vec::new(),
             },
+            text_model: TextModelConfig::default(),
             automation: AutomationConfig {
                 enabled: false,
                 port: 4762,
@@ -170,6 +203,33 @@ pub struct EngineProbe {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextModelProbe {
+    pub ready: bool,
+    pub base_url: String,
+    pub summary: String,
+    pub output: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreativeBriefRequest {
+    pub brief: String,
+    pub template: String,
+    pub width: u32,
+    pub height: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreativePlan {
+    pub template: String,
+    pub eyebrow: String,
+    pub title: String,
+    pub subtitle: String,
+    pub cta: String,
+    pub image_prompt: String,
+    pub negative_prompt: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DesignRequest {
     pub template: String,
     pub title: String,
@@ -196,6 +256,7 @@ pub struct CapabilitySummary {
     pub video_generation: bool,
     pub loras: bool,
     pub svg_composition: bool,
+    pub text_design_generation: bool,
     pub automation_api: bool,
     pub engine_mode: EngineMode,
 }
