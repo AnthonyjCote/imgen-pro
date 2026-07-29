@@ -12,11 +12,13 @@
     AppConfig,
     AutomationStatus,
     CapabilitySummary,
+    CreativePlan,
     DesignRequest,
     EngineProbe,
     GeneratedAsset,
     GenerationJob,
-    GenerationRequest
+    GenerationRequest,
+    TextModelProbe
   } from "./lib/types";
 
   type View = "create" | "compose" | "library" | "engine";
@@ -29,8 +31,11 @@
   let busy = false;
   let notice = "";
   let engineProbe: EngineProbe | null = null;
+  let textModelProbe: TextModelProbe | null = null;
   let automationStatus: AutomationStatus | null = null;
   let renderedDesign: GeneratedAsset | null = null;
+  let creativePlan: CreativePlan | null = null;
+  let creativeBrief = "";
   let seedText = "";
 
   let generation: GenerationRequest = {
@@ -119,6 +124,47 @@
     }
   }
 
+  async function generateCreativePlan() {
+    if (!creativeBrief.trim()) {
+      notice = "Add a creative brief before asking the local model to plan the design.";
+      return;
+    }
+
+    busy = true;
+    notice = "";
+    try {
+      creativePlan = await api.generateCreativePlan({
+        brief: creativeBrief,
+        template: design.template,
+        width: design.width,
+        height: design.height
+      });
+      design = {
+        ...design,
+        template: creativePlan.template,
+        eyebrow: creativePlan.eyebrow,
+        title: creativePlan.title,
+        subtitle: creativePlan.subtitle,
+        cta: creativePlan.cta
+      };
+      generation = {
+        ...generation,
+        prompt: creativePlan.image_prompt,
+        negative_prompt: creativePlan.negative_prompt || generation.negative_prompt
+      };
+      notice = "Creative plan generated locally. The editable copy and image prompt are ready.";
+    } catch (error) {
+      setError(error);
+    } finally {
+      busy = false;
+    }
+  }
+
+  function openPlanInImageGenerator() {
+    view = "create";
+    notice = "The local creative plan is loaded as a normal image-generation prompt.";
+  }
+
   async function renderHybridDesign() {
     busy = true;
     notice = "";
@@ -134,7 +180,7 @@
   }
 
   function useAssetInComposer(asset: GeneratedAsset) {
-    design.background_image_path = asset.path;
+    design = { ...design, background_image_path: asset.path };
     view = "compose";
   }
 
@@ -159,6 +205,18 @@
     notice = "";
     try {
       engineProbe = await api.probeEngine();
+    } catch (error) {
+      setError(error);
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function runTextModelProbe() {
+    busy = true;
+    notice = "";
+    try {
+      textModelProbe = await api.probeTextModel();
     } catch (error) {
       setError(error);
     } finally {
@@ -219,9 +277,14 @@
     {:else if view === "compose"}
       <ComposeView
         {design}
+        {creativeBrief}
+        {creativePlan}
         {renderedDesign}
         {previews}
         {busy}
+        onCreativeBriefChange={(value) => (creativeBrief = value)}
+        onGeneratePlan={() => void generateCreativePlan()}
+        onOpenImageGenerator={openPlanInImageGenerator}
         onRender={() => void renderHybridDesign()}
       />
     {:else if view === "library"}
@@ -231,10 +294,12 @@
         {config}
         {capabilities}
         {engineProbe}
+        {textModelProbe}
         {automationStatus}
         {busy}
         onSave={() => void saveEngineSettings()}
         onProbe={() => void runEngineProbe()}
+        onProbeTextModel={() => void runTextModelProbe()}
         onStartAutomation={() => void startAutomation()}
       />
     {/if}
