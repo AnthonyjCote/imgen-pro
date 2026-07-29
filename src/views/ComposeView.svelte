@@ -1,10 +1,15 @@
 <script lang="ts">
-  import type { DesignRequest, GeneratedAsset } from "../lib/types";
+  import type { CreativePlan, DesignRequest, GeneratedAsset } from "../lib/types";
 
   export let design: DesignRequest;
+  export let creativeBrief: string;
+  export let creativePlan: CreativePlan | null;
   export let renderedDesign: GeneratedAsset | null;
   export let previews: Record<string, string>;
   export let busy: boolean;
+  export let onCreativeBriefChange: (value: string) => void;
+  export let onGeneratePlan: () => void;
+  export let onOpenImageGenerator: () => void;
   export let onRender: () => void;
 </script>
 
@@ -13,7 +18,37 @@
     <div class="panel-intro">
       <p class="eyebrow">HYBRID DESIGN</p>
       <h2>Image + SVG composer</h2>
-      <p>Keep typography, calls to action, and graphic shapes crisp while using a generated image as the visual layer.</p>
+      <p>Use a local language model to plan the copy and visual direction, then keep typography and vector elements crisp over a separately generated image.</p>
+    </div>
+
+    <div class="ai-brief-card">
+      <div class="section-heading">
+        <div>
+          <span>Local creative director</span>
+          <small>Produces editable copy plus a clean image-only prompt.</small>
+        </div>
+        <span class="count-pill">LLM</span>
+      </div>
+      <label class="field">
+        <span>Creative brief</span>
+        <textarea
+          rows="5"
+          value={creativeBrief}
+          oninput={(event) => onCreativeBriefChange((event.currentTarget as HTMLTextAreaElement).value)}
+          placeholder="Create a premium web hero for a local service business. Modern, confident, lots of negative space, clear value proposition..."
+        ></textarea>
+      </label>
+      <button class="secondary-button full-width" disabled={busy} onclick={onGeneratePlan}>
+        {busy ? "Planning…" : "Generate copy + visual direction"}
+      </button>
+
+      {#if creativePlan}
+        <div class="creative-plan-preview">
+          <span>Image prompt</span>
+          <p>{creativePlan.image_prompt}</p>
+          <button class="text-button" onclick={onOpenImageGenerator}>Open in image generator →</button>
+        </div>
+      {/if}
     </div>
 
     <label class="field">
