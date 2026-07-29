@@ -5,6 +5,7 @@ mod engines;
 mod jobs;
 mod models;
 mod state;
+mod text_model;
 
 use tauri::Manager;
 
@@ -36,6 +37,8 @@ pub fn run() {
             commands::enqueue_generation,
             commands::cancel_job,
             commands::probe_engine,
+            commands::probe_text_model,
+            commands::generate_creative_plan,
             commands::render_design,
             commands::read_asset_preview,
             commands::start_automation_server,
