@@ -91,10 +91,7 @@ pub async fn generate(
         args.extend(["-n".to_string(), request.negative_prompt.clone()]);
     }
     if !model.lora_directory.trim().is_empty() && !request.loras.is_empty() {
-        args.extend([
-            "--lora-model-dir".to_string(),
-            model.lora_directory.clone(),
-        ]);
+        args.extend(["--lora-model-dir".to_string(), model.lora_directory.clone()]);
     }
     args.extend(model.extra_args.clone());
 
