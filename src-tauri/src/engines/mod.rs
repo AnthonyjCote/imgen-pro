@@ -1,5 +1,6 @@
 mod mock;
 mod sd_cpp;
+mod sd_server;
 
 use crate::{
     models::{
@@ -27,6 +28,9 @@ pub async fn generate(
         EngineMode::StableDiffusionCpp => {
             sd_cpp::generate(state, request, &config.engine, &model).await
         }
+        EngineMode::StableDiffusionCppServer => {
+            sd_server::generate(state, request, &config.engine, &model).await
+        }
     }
 }
 
@@ -40,6 +44,7 @@ pub async fn probe(config: &EngineConfig) -> Result<EngineProbe, String> {
             output: "No external process is required in mock mode.".to_string(),
         }),
         EngineMode::StableDiffusionCpp => sd_cpp::probe(config).await,
+        EngineMode::StableDiffusionCppServer => sd_server::probe(config).await,
     }
 }
 

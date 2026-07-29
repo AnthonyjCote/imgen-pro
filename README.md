@@ -105,13 +105,13 @@ Any local server implementing compatible `/v1/models` and `/v1/chat/completions`
 
 ## Connecting stable-diffusion.cpp
 
-1. Build or install a working `sd-cli` binary. The target Mac is expected to use a Vulkan build through MoltenVK.
+1. Build or install working `sd-cli` and `sd-server` binaries. The target Mac is expected to use a Vulkan build through MoltenVK.
 2. Open **Engine** in Imgen Pro.
-3. Change the image mode to `stable-diffusion.cpp`.
-4. Enter the absolute path to `sd-cli`.
+3. Change the image mode to either `stable-diffusion.cpp CLI` or `stable-diffusion.cpp server`.
+4. Enter the absolute path to `sd-cli` for CLI mode, or the local `sd-server` URL for server mode.
 5. Configure either a complete model path or component paths for a FLUX-style model.
 6. Save settings and run **Probe image engine**.
-7. Begin with 512×512 or 768×768, one queued job, and a distilled low-step model.
+7. Begin with the 256×256 smoke preset, one queued job, and a distilled low-step model.
 
 The adapter supports these profile fields:
 
@@ -126,6 +126,22 @@ The adapter supports these profile fields:
 - Additional model-specific CLI arguments
 
 The frontend submits normalized generation requests and does not construct shell commands.
+
+Server mode avoids reloading the model for every generation. Start the local server before switching Imgen Pro to `stable-diffusion.cpp server`:
+
+```bash
+/Users/dev/DEV_TOOLS/stable-diffusion.cpp/build-vulkan/bin/sd-server \
+  --listen-ip 127.0.0.1 \
+  --listen-port 1234 \
+  --diffusion-model /Users/dev/DEV_TOOLS/MODELS_IMG/z_image_turbo-Q2_K.gguf \
+  --vae /Users/dev/DEV_TOOLS/MODELS_IMG/vae/ae.sft \
+  --llm /Users/dev/DEV_TOOLS/MODELS_IMG/text_encoders/Qwen3-4B-Instruct-2507-Q4_K_M.gguf \
+  --backend all=cpu \
+  --params-backend all=cpu \
+  --offload-to-cpu \
+  --cfg-scale 1.0 \
+  --sampling-method euler
+```
 
 ### Local Z-Image smoke test on the Intel Mac
 

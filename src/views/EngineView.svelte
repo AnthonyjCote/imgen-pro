@@ -43,7 +43,8 @@
           <span>Mode</span>
           <select bind:value={config.engine.mode}>
             <option value="mock">Mock viability engine</option>
-            <option value="stable_diffusion_cpp">stable-diffusion.cpp</option>
+            <option value="stable_diffusion_cpp">stable-diffusion.cpp CLI</option>
+            <option value="stable_diffusion_cpp_server">stable-diffusion.cpp server</option>
           </select>
         </label>
         <label class="field">
@@ -60,6 +61,10 @@
       <label class="field">
         <span>sd-cli binary path</span>
         <input bind:value={config.engine.binary_path} placeholder="/Users/you/stable-diffusion.cpp/build/bin/sd-cli" />
+      </label>
+      <label class="field">
+        <span>sd-server URL</span>
+        <input bind:value={config.engine.server_url} placeholder="http://127.0.0.1:1234" />
       </label>
 
       {#if activeModel}

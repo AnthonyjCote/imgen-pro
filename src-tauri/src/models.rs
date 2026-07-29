@@ -7,6 +7,7 @@ use uuid::Uuid;
 pub enum EngineMode {
     Mock,
     StableDiffusionCpp,
+    StableDiffusionCppServer,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -57,6 +58,8 @@ pub struct ModelProfile {
 pub struct EngineConfig {
     pub mode: EngineMode,
     pub binary_path: String,
+    #[serde(default = "default_sd_server_url")]
+    pub server_url: String,
     pub backend: BackendPreference,
     pub active_model_id: String,
     pub models: Vec<ModelProfile>,
@@ -107,6 +110,7 @@ impl Default for AppConfig {
             engine: EngineConfig {
                 mode: EngineMode::Mock,
                 binary_path: String::new(),
+                server_url: default_sd_server_url(),
                 backend: BackendPreference::Vulkan,
                 active_model_id: "primary-model".to_string(),
                 models: vec![ModelProfile {
@@ -134,6 +138,10 @@ impl Default for AppConfig {
             },
         }
     }
+}
+
+fn default_sd_server_url() -> String {
+    "http://127.0.0.1:1234".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

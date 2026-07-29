@@ -1,4 +1,4 @@
-export type EngineMode = "mock" | "stable_diffusion_cpp";
+export type EngineMode = "mock" | "stable_diffusion_cpp" | "stable_diffusion_cpp_server";
 export type BackendPreference = "auto" | "vulkan" | "metal" | "cpu";
 export type TextProviderMode = "mock" | "disabled" | "openai_compatible";
 export type JobStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
@@ -31,6 +31,7 @@ export interface ModelProfile {
 export interface EngineConfig {
   mode: EngineMode;
   binary_path: string;
+  server_url: string;
   backend: BackendPreference;
   active_model_id: string;
   models: ModelProfile[];
