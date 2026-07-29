@@ -16,8 +16,21 @@
   export let onGenerate: () => void;
   export let onUseAsset: (asset: GeneratedAsset) => void;
 
+  const sizePresets = [
+    { label: "Square", width: 768, height: 768 },
+    { label: "Web hero", width: 1024, height: 576 },
+    { label: "Wide banner", width: 1152, height: 512 },
+    { label: "Desktop", width: 1024, height: 640 },
+    { label: "Portrait", width: 576, height: 1024 }
+  ];
+
   function useJobOutput(job: GenerationJob) {
     if (job.output) onUseAsset(job.output);
+  }
+
+  function applySize(width: number, height: number) {
+    generation.width = width;
+    generation.height = height;
   }
 </script>
 
@@ -28,12 +41,16 @@
       <button disabled title="Video adapter follows image viability testing">Video <span>Soon</span></button>
     </div>
 
+    <div class="mode-note">
+      Generate clean standalone images for backgrounds, hero visuals, textures, product shots, or design elements. Sending an output to the SVG composer is optional.
+    </div>
+
     <label class="field prompt-field">
       <span>Describe your image</span>
       <textarea
         bind:value={generation.prompt}
         rows="8"
-        placeholder="A cinematic product poster for a premium oatmeal stout, offset can, cold condensation, dramatic bowling lane lighting..."
+        placeholder="An abstract premium web background, deep charcoal architectural forms, subtle volumetric light, clean negative space, no text..."
       ></textarea>
       <small>Use the mock engine to validate the workflow before loading a multi-gigabyte model.</small>
     </label>
@@ -76,6 +93,19 @@
         <span>Steps</span>
         <input type="number" min="1" max="100" bind:value={generation.steps} />
       </label>
+    </div>
+
+    <div class="size-presets" aria-label="Image size presets">
+      {#each sizePresets as preset}
+        <button
+          type="button"
+          class:active={generation.width === preset.width && generation.height === preset.height}
+          onclick={() => applySize(preset.width, preset.height)}
+        >
+          <strong>{preset.label}</strong>
+          <span>{preset.width}×{preset.height}</span>
+        </button>
+      {/each}
     </div>
 
     <div class="lora-section">
