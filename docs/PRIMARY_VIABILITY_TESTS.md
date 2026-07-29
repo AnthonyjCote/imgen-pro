@@ -30,6 +30,9 @@ Pass condition: jobs and outputs survive restart.
 
 ### P0.4 Hybrid composition
 
+- Open **Compose** while the text provider is set to **Mock creative planner**.
+- Enter a creative brief and generate copy plus visual direction.
+- Open the generated image prompt in **Create**.
 - Select a completed mock output.
 - Choose **Use in design**.
 - Render an editable SVG.

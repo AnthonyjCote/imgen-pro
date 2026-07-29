@@ -122,7 +122,7 @@ fn validate_config(config: &AppConfig) -> Result<(), String> {
     {
         return Err("The active model ID does not match a model profile.".to_string());
     }
-    if config.text_model.mode != TextProviderMode::Disabled {
+    if config.text_model.mode == TextProviderMode::OpenAiCompatible {
         if config.text_model.base_url.trim().is_empty() {
             return Err("Local text model base URL cannot be empty.".to_string());
         }

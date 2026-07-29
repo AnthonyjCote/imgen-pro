@@ -108,6 +108,7 @@
         <label class="field">
           <span>Provider</span>
           <select bind:value={config.text_model.mode}>
+            <option value="mock">Mock creative planner</option>
             <option value="openai_compatible">OpenAI-compatible local server</option>
             <option value="disabled">Disabled</option>
           </select>

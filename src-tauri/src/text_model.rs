@@ -18,6 +18,15 @@ The image_prompt should describe composition, subject, environment, lighting, ma
 The negative_prompt should discourage malformed subjects, illegible text, watermarks, logos, low detail, and unwanted clutter."#;
 
 pub async fn probe(config: &TextModelConfig) -> Result<TextModelProbe, String> {
+    if config.mode == TextProviderMode::Mock {
+        return Ok(TextModelProbe {
+            ready: true,
+            base_url: "mock://creative-planner".to_string(),
+            summary: "Mock creative planner is ready for offline workflow testing.".to_string(),
+            output: "No local text server is required in mock mode.".to_string(),
+        });
+    }
+
     if config.mode == TextProviderMode::Disabled {
         return Ok(TextModelProbe {
             ready: false,
@@ -63,6 +72,9 @@ pub async fn generate_plan(
     }
     if !(320..=4096).contains(&request.width) || !(320..=4096).contains(&request.height) {
         return Err("Creative plan dimensions must be between 320 and 4096 pixels.".to_string());
+    }
+    if config.mode == TextProviderMode::Mock {
+        return mock_plan(request);
     }
 
     let client = client()?;
@@ -114,6 +126,56 @@ pub async fn generate_plan(
         .map_err(|error| format!("Creative plan was not valid JSON: {error}"))?;
 
     normalize_plan(&mut plan, &request)?;
+    Ok(plan)
+}
+
+fn mock_plan(request: CreativeBriefRequest) -> Result<CreativePlan, String> {
+    let brief = request.brief.trim();
+    let lowered = brief.to_lowercase();
+    let template = match request.template.as_str() {
+        "feature-poster" | "web-hero" => request.template,
+        _ => "feature-poster".to_string(),
+    };
+    let audience = if lowered.contains("restaurant") || lowered.contains("food") {
+        "local diners"
+    } else if lowered.contains("saas") || lowered.contains("software") {
+        "modern teams"
+    } else if lowered.contains("fitness") || lowered.contains("wellness") {
+        "motivated clients"
+    } else {
+        "ideal customers"
+    };
+    let tone = if lowered.contains("premium") || lowered.contains("luxury") {
+        "premium"
+    } else if lowered.contains("playful") || lowered.contains("fun") {
+        "playful"
+    } else {
+        "confident"
+    };
+
+    let mut plan = CreativePlan {
+        template,
+        eyebrow: "LOCAL MOCK PLAN".to_string(),
+        title: format!("A {tone} campaign for {audience}"),
+        subtitle: format!(
+            "Turn the brief into a clear visual system with focused copy, useful negative space, and a polished local-first workflow."
+        ),
+        cta: "Generate the visual".to_string(),
+        image_prompt: format!(
+            "{tone} marketing background inspired by this brief: {brief}. Clean composition, realistic materials, intentional negative space for overlaid SVG typography, refined lighting, high detail, no text, no logos, no watermark"
+        ),
+        negative_prompt:
+            "text, logo, watermark, labels, distorted typography, clutter, low detail, malformed objects"
+                .to_string(),
+    };
+    let fallback_template = plan.template.clone();
+    let normalized_request = CreativeBriefRequest {
+        brief: brief.to_string(),
+        template: fallback_template,
+        width: request.width,
+        height: request.height,
+    };
+    normalize_plan(&mut plan, &normalized_request)?;
     Ok(plan)
 }
 

@@ -21,6 +21,7 @@ pub enum BackendPreference {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum TextProviderMode {
+    Mock,
     Disabled,
     OpenAiCompatible,
 }
@@ -73,7 +74,7 @@ pub struct TextModelConfig {
 impl Default for TextModelConfig {
     fn default() -> Self {
         Self {
-            mode: TextProviderMode::OpenAiCompatible,
+            mode: TextProviderMode::Mock,
             base_url: "http://127.0.0.1:8080/v1".to_string(),
             model: "local-model".to_string(),
             api_key: String::new(),

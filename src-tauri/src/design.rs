@@ -24,6 +24,7 @@ pub fn render(state: &AppState, request: DesignRequest) -> Result<GeneratedAsset
         .join(format!("{output_name}-{asset_id}.svg"));
 
     let image_layer = embedded_image_layer(
+        state,
         &request.background_image_path,
         request.width,
         request.height,
@@ -45,7 +46,12 @@ pub fn render(state: &AppState, request: DesignRequest) -> Result<GeneratedAsset
     })
 }
 
-fn embedded_image_layer(path: &str, width: u32, height: u32) -> Result<String, String> {
+fn embedded_image_layer(
+    state: &AppState,
+    path: &str,
+    width: u32,
+    height: u32,
+) -> Result<String, String> {
     if path.trim().is_empty() {
         return Ok(format!(
             r##"<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="url(#visualGradient)"/>
@@ -64,6 +70,11 @@ fn embedded_image_layer(path: &str, width: u32, height: u32) -> Result<String, S
     let source = Path::new(path);
     if !source.is_file() {
         return Err(format!("Background image does not exist: {path}"));
+    }
+    if !state.is_path_inside_app_data(source) {
+        return Err(
+            "Background image must come from the Imgen Pro output or design library.".to_string(),
+        );
     }
 
     let bytes =

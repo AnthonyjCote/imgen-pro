@@ -16,6 +16,7 @@ Either engine can be used independently. SVG composition is optional; image outp
 - Image-only presets for square, web hero, wide banner, desktop, and portrait assets
 - Single-worker generation queue to avoid competing GPU jobs
 - Mock image engine for validating the complete application workflow before loading a model
+- Mock creative planner for validating text + image workflows before launching a local LLM
 - Configurable `stable-diffusion.cpp` process adapter
 - Local OpenAI-compatible text/design model adapter
 - Creative brief workflow that produces editable copy plus a separate image prompt
@@ -43,7 +44,7 @@ npm run tauri dev
 
 The setup command verifies Node, npm, Rust, Cargo, and Xcode Command Line Tools before installing JavaScript dependencies.
 
-The app starts in **Mock viability engine** mode. Generate an image immediately to test the queue, persistence, preview loading, local file output, and SVG composition without downloading an image model.
+The app starts in **Mock viability engine** mode with the **Mock creative planner** enabled. Generate an image immediately to test the queue, persistence, preview loading, local file output, and SVG composition without downloading an image model or launching a local text model.
 
 ## Workflow 1: normal image output
 

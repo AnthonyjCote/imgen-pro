@@ -1,6 +1,6 @@
 export type EngineMode = "mock" | "stable_diffusion_cpp";
 export type BackendPreference = "auto" | "vulkan" | "metal" | "cpu";
-export type TextProviderMode = "disabled" | "openai_compatible";
+export type TextProviderMode = "mock" | "disabled" | "openai_compatible";
 export type JobStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
 export type AssetKind = "image" | "video" | "design";
 
