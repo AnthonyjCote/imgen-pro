@@ -7,6 +7,7 @@
     "dev": "vite --host 127.0.0.1 --port 1420",
     "build": "vite build",
     "check": "svelte-check --tsconfig ./tsconfig.json",
+    "setup:mac": "bash scripts/setup-macos.sh",
     "tauri": "tauri"
   },
   "dependencies": {
