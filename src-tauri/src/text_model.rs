@@ -75,9 +75,10 @@ pub async fn generate_plan(
         request.height
     );
     let payload = json!({
-        "model": config.model,
+        "model": &config.model,
         "temperature": config.temperature,
         "max_tokens": config.max_tokens,
+        "response_format": { "type": "json_object" },
         "messages": [
             { "role": "system", "content": SYSTEM_PROMPT },
             { "role": "user", "content": user_prompt }
@@ -143,19 +144,16 @@ fn extract_json_object(content: &str) -> Result<&str, String> {
     let start = content
         .find('{')
         .ok_or_else(|| "Creative plan response did not contain a JSON object.".to_string())?;
-    let end = content
-        .rfind('}')
-        .ok_or_else(|| "Creative plan response did not contain a complete JSON object.".to_string())?;
+    let end = content.rfind('}').ok_or_else(|| {
+        "Creative plan response did not contain a complete JSON object.".to_string()
+    })?;
     if end <= start {
         return Err("Creative plan response contained malformed JSON.".to_string());
     }
     Ok(&content[start..=end])
 }
 
-fn normalize_plan(
-    plan: &mut CreativePlan,
-    request: &CreativeBriefRequest,
-) -> Result<(), String> {
+fn normalize_plan(plan: &mut CreativePlan, request: &CreativeBriefRequest) -> Result<(), String> {
     plan.template = match plan.template.as_str() {
         "feature-poster" | "web-hero" => plan.template.clone(),
         _ => request.template.clone(),
