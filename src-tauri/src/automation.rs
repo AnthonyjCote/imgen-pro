@@ -10,8 +10,7 @@ use serde_json::{json, Value};
 use crate::{
     design, jobs,
     models::{
-        AutomationStatus, CreativeBriefRequest, DesignRequest, GenerationRequest,
-        TextProviderMode,
+        AutomationStatus, CreativeBriefRequest, DesignRequest, GenerationRequest, TextProviderMode,
     },
     state::AppState,
     text_model,
