@@ -202,6 +202,5 @@ fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T> {
 fn write_json<T: serde::Serialize>(path: &Path, value: &T) -> Result<(), String> {
     let content = serde_json::to_string_pretty(value)
         .map_err(|error| format!("Unable to serialize {}: {error}", path.display()))?;
-    fs::write(path, content)
-        .map_err(|error| format!("Unable to write {}: {error}", path.display()))
+    fs::write(path, content).map_err(|error| format!("Unable to write {}: {error}", path.display()))
 }
