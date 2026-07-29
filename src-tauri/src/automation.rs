@@ -9,8 +9,12 @@ use serde_json::{json, Value};
 
 use crate::{
     design, jobs,
-    models::{AutomationStatus, DesignRequest, GenerationRequest},
+    models::{
+        AutomationStatus, CreativeBriefRequest, DesignRequest, GenerationRequest,
+        TextProviderMode,
+    },
     state::AppState,
+    text_model,
 };
 
 pub async fn start(state: AppState) -> Result<AutomationStatus, String> {
@@ -39,6 +43,7 @@ pub async fn start(state: AppState) -> Result<AutomationStatus, String> {
         .route("/v1/jobs", get(list_jobs))
         .route("/v1/jobs/{id}", get(get_job))
         .route("/v1/generate/image", post(generate_image))
+        .route("/v1/creative/plan", post(generate_creative_plan))
         .route("/v1/designs/render", post(render_design))
         .with_state(state.clone());
 
@@ -70,6 +75,7 @@ async fn capabilities(State(state): State<AppState>, headers: HeaderMap) -> impl
         "video_generation": false,
         "loras": true,
         "svg_composition": true,
+        "text_design_generation": config.text_model.mode != TextProviderMode::Disabled,
         "engine_mode": config.engine.mode
     }))
 }
@@ -108,6 +114,20 @@ async fn generate_image(
     }
     match jobs::enqueue(state, request) {
         Ok(job) => (StatusCode::ACCEPTED, Json(json!(job))),
+        Err(error) => bad_request(error),
+    }
+}
+
+async fn generate_creative_plan(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(request): Json<CreativeBriefRequest>,
+) -> impl IntoResponse {
+    if !authorized(&state, &headers) {
+        return unauthorized();
+    }
+    match text_model::generate_plan(&state.config().text_model, request).await {
+        Ok(plan) => ok(json!(plan)),
         Err(error) => bad_request(error),
     }
 }
