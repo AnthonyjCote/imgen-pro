@@ -9,7 +9,8 @@ use std::{
 };
 
 use tauri::{AppHandle, Manager};
-use tokio::sync::Semaphore;
+use tokio::sync::Mutex;
+use tokio::{process::Child, sync::Semaphore};
 
 use crate::models::{AppConfig, GenerationJob};
 
@@ -29,6 +30,8 @@ struct AppStateInner {
     paths: AppPaths,
     generation_gate: Arc<Semaphore>,
     automation_started: AtomicBool,
+    image_server_child: Arc<Mutex<Option<Child>>>,
+    image_server_logs: RwLock<Vec<String>>,
 }
 
 #[derive(Clone)]
@@ -73,6 +76,8 @@ impl AppState {
                 paths,
                 generation_gate: Arc::new(Semaphore::new(1)),
                 automation_started: AtomicBool::new(false),
+                image_server_child: Arc::new(Mutex::new(None)),
+                image_server_logs: RwLock::new(Vec::new()),
             }),
         };
 
@@ -171,6 +176,39 @@ impl AppState {
 
     pub fn reset_automation_started(&self) {
         self.inner.automation_started.store(false, Ordering::SeqCst);
+    }
+
+    pub fn image_server_child(&self) -> Arc<Mutex<Option<Child>>> {
+        self.inner.image_server_child.clone()
+    }
+
+    pub fn image_server_logs(&self) -> Vec<String> {
+        self.inner
+            .image_server_logs
+            .read()
+            .expect("image server logs lock poisoned")
+            .clone()
+    }
+
+    pub fn push_image_server_log(&self, line: String) {
+        let mut logs = self
+            .inner
+            .image_server_logs
+            .write()
+            .expect("image server logs lock poisoned");
+        logs.push(line);
+        if logs.len() > 300 {
+            let overflow = logs.len() - 300;
+            logs.drain(0..overflow);
+        }
+    }
+
+    pub fn clear_image_server_logs(&self) {
+        self.inner
+            .image_server_logs
+            .write()
+            .expect("image server logs lock poisoned")
+            .clear();
     }
 
     pub fn is_path_inside_app_data(&self, path: &Path) -> bool {

@@ -4,11 +4,11 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use tauri::State;
 
 use crate::{
-    automation, design, engines, jobs,
+    automation, design, engines, image_server, jobs,
     models::{
         AppConfig, AutomationStatus, CapabilitySummary, CreativeBriefRequest, CreativePlan,
         DesignRequest, EngineProbe, GeneratedAsset, GenerationJob, GenerationRequest,
-        TextModelProbe, TextProviderMode,
+        ManagedImageServerStatus, TextModelProbe, TextProviderMode,
     },
     state::AppState,
     text_model,
@@ -110,6 +110,27 @@ pub async fn start_automation_server(
     automation::start(state.inner().clone()).await
 }
 
+#[tauri::command]
+pub async fn start_image_server(
+    state: State<'_, AppState>,
+) -> Result<ManagedImageServerStatus, String> {
+    image_server::start(state.inner().clone()).await
+}
+
+#[tauri::command]
+pub async fn stop_image_server(
+    state: State<'_, AppState>,
+) -> Result<ManagedImageServerStatus, String> {
+    image_server::stop(state.inner()).await
+}
+
+#[tauri::command]
+pub async fn get_image_server_status(
+    state: State<'_, AppState>,
+) -> Result<ManagedImageServerStatus, String> {
+    image_server::status(state.inner()).await
+}
+
 fn validate_config(config: &AppConfig) -> Result<(), String> {
     if config.engine.models.is_empty() {
         return Err("At least one model profile is required.".to_string());
@@ -126,6 +147,11 @@ fn validate_config(config: &AppConfig) -> Result<(), String> {
         && config.engine.server_url.trim().is_empty()
     {
         return Err("stable-diffusion.cpp server URL cannot be empty.".to_string());
+    }
+    if config.engine.mode == crate::models::EngineMode::StableDiffusionCppServer
+        && config.engine.server_binary_path.trim().is_empty()
+    {
+        return Err("stable-diffusion.cpp server binary path cannot be empty.".to_string());
     }
     if config.text_model.mode == TextProviderMode::OpenAiCompatible {
         if config.text_model.base_url.trim().is_empty() {

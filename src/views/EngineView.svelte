@@ -4,18 +4,22 @@
     AutomationStatus,
     CapabilitySummary,
     EngineProbe,
+    ManagedImageServerStatus,
     TextModelProbe
   } from "../lib/types";
 
   export let config: AppConfig;
   export let capabilities: CapabilitySummary | null;
   export let engineProbe: EngineProbe | null;
+  export let imageServerStatus: ManagedImageServerStatus | null;
   export let textModelProbe: TextModelProbe | null;
   export let automationStatus: AutomationStatus | null;
   export let busy: boolean;
   export let onSave: () => void;
   export let onProbe: () => void;
   export let onProbeTextModel: () => void;
+  export let onStartImageServer: () => void;
+  export let onStopImageServer: () => void;
   export let onStartAutomation: () => void;
 
   $: activeModel = config.engine.models.find(
@@ -61,6 +65,10 @@
       <label class="field">
         <span>sd-cli binary path</span>
         <input bind:value={config.engine.binary_path} placeholder="/Users/you/stable-diffusion.cpp/build/bin/sd-cli" />
+      </label>
+      <label class="field">
+        <span>sd-server binary path</span>
+        <input bind:value={config.engine.server_binary_path} placeholder="/Users/you/stable-diffusion.cpp/build/bin/sd-server" />
       </label>
       <label class="field">
         <span>sd-server URL</span>
@@ -161,6 +169,8 @@
 
     <div class="button-row wrap-buttons">
       <button class="primary-button" disabled={busy} onclick={onSave}>Save settings</button>
+      <button class="secondary-button" disabled={busy || imageServerStatus?.running} onclick={onStartImageServer}>Start image server</button>
+      <button class="secondary-button" disabled={busy || !imageServerStatus?.running} onclick={onStopImageServer}>Stop image server</button>
       <button class="secondary-button" disabled={busy} onclick={onProbe}>Probe image engine</button>
       <button class="secondary-button" disabled={busy} onclick={onProbeTextModel}>Probe text model</button>
       <button class="secondary-button" disabled={busy} onclick={onStartAutomation}>Start local API</button>
@@ -171,6 +181,10 @@
     <div class="diagnostic-card">
       <span>Image generation</span>
       <strong>{capabilities?.image_generation ? "Ready" : "Not ready"}</strong>
+    </div>
+    <div class="diagnostic-card">
+      <span>Managed sd-server</span>
+      <strong>{imageServerStatus?.running ? imageServerStatus.phase : "Stopped"}</strong>
     </div>
     <div class="diagnostic-card">
       <span>Local creative planning</span>
@@ -193,6 +207,16 @@
       <div class="terminal-card">
         <div><span class:terminal-ready={engineProbe.ready}></span>{engineProbe.summary}</div>
         <pre>{engineProbe.output}</pre>
+      </div>
+    {/if}
+
+    {#if imageServerStatus}
+      <div class="terminal-card">
+        <div>
+          <span class:terminal-ready={imageServerStatus.running}></span>
+          {imageServerStatus.running ? `PID ${imageServerStatus.pid ?? "unknown"} at ${imageServerStatus.address}` : imageServerStatus.address}
+        </div>
+        <pre>{imageServerStatus.logs.slice(-80).join("\n") || "No managed server logs yet."}</pre>
       </div>
     {/if}
 

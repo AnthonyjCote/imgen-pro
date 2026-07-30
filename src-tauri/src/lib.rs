@@ -2,6 +2,7 @@ mod automation;
 mod commands;
 mod design;
 mod engines;
+mod image_server;
 mod jobs;
 mod models;
 mod state;
@@ -42,6 +43,9 @@ pub fn run() {
             commands::render_design,
             commands::read_asset_preview,
             commands::start_automation_server,
+            commands::start_image_server,
+            commands::stop_image_server,
+            commands::get_image_server_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Imgen Pro");

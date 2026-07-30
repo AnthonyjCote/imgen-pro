@@ -29,7 +29,7 @@ pub async fn generate(
             sd_cpp::generate(state, request, &config.engine, &model).await
         }
         EngineMode::StableDiffusionCppServer => {
-            sd_server::generate(state, request, &config.engine, &model).await
+            sd_server::generate(state, job_id, request, &config.engine, &model).await
         }
     }
 }
@@ -48,7 +48,7 @@ pub async fn probe(config: &EngineConfig) -> Result<EngineProbe, String> {
     }
 }
 
-pub(super) fn validate_model_paths(model: &ModelProfile) -> Result<(), String> {
+pub(crate) fn validate_model_paths(model: &ModelProfile) -> Result<(), String> {
     let has_complete_model = !model.model_path.trim().is_empty();
     let has_diffusion_model = !model.diffusion_model_path.trim().is_empty();
     if !has_complete_model && !has_diffusion_model {

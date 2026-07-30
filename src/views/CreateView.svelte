@@ -33,6 +33,13 @@
     generation.width = width;
     generation.height = height;
   }
+
+  function formatDuration(seconds: number | null) {
+    if (seconds == null) return "—";
+    const minutes = Math.floor(seconds / 60);
+    const remaining = seconds % 60;
+    return minutes > 0 ? `${minutes}m ${remaining}s` : `${remaining}s`;
+  }
 </script>
 
 <section class="generator-layout">
@@ -169,7 +176,11 @@
                 <div class="generation-state">
                   <span class:spinning={job.status === "running"}></span>
                   <strong>{job.status}</strong>
-                  <small>{job.progress}%</small>
+                  <small>{job.phase || `${job.progress}%`}</small>
+                  <div class="progress-track" aria-label="Generation progress">
+                    <div style={`width: ${job.progress}%`}></div>
+                  </div>
+                  <small>{job.progress}% · elapsed {formatDuration(job.elapsed_seconds)} · ETA {formatDuration(job.eta_seconds)}</small>
                 </div>
               {/if}
             </div>

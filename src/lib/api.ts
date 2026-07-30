@@ -10,6 +10,7 @@ import type {
   GeneratedAsset,
   GenerationJob,
   GenerationRequest,
+  ManagedImageServerStatus,
   TextModelProbe
 } from "./types";
 
@@ -29,5 +30,8 @@ export const api = {
   renderDesign: (request: DesignRequest) =>
     invoke<GeneratedAsset>("render_design", { request }),
   readAssetPreview: (path: string) => invoke<string>("read_asset_preview", { path }),
-  startAutomationServer: () => invoke<AutomationStatus>("start_automation_server")
+  startAutomationServer: () => invoke<AutomationStatus>("start_automation_server"),
+  startImageServer: () => invoke<ManagedImageServerStatus>("start_image_server"),
+  stopImageServer: () => invoke<ManagedImageServerStatus>("stop_image_server"),
+  getImageServerStatus: () => invoke<ManagedImageServerStatus>("get_image_server_status")
 };

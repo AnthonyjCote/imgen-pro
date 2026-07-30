@@ -18,6 +18,7 @@
     GeneratedAsset,
     GenerationJob,
     GenerationRequest,
+    ManagedImageServerStatus,
     TextModelProbe
   } from "./lib/types";
 
@@ -31,6 +32,7 @@
   let busy = false;
   let notice = "";
   let engineProbe: EngineProbe | null = null;
+  let imageServerStatus: ManagedImageServerStatus | null = null;
   let textModelProbe: TextModelProbe | null = null;
   let automationStatus: AutomationStatus | null = null;
   let renderedDesign: GeneratedAsset | null = null;
@@ -76,6 +78,7 @@
         loadedConfig.engine.models.find((model) => model.id === loadedConfig.engine.active_model_id)
           ?.default_steps ?? generation.steps;
       await loadPreviews();
+      await refreshImageServerStatus();
     } catch (error) {
       setError(error);
     }
@@ -224,6 +227,44 @@
     }
   }
 
+  async function refreshImageServerStatus() {
+    try {
+      imageServerStatus = await api.getImageServerStatus();
+    } catch {
+      imageServerStatus = null;
+    }
+  }
+
+  async function startImageServer() {
+    busy = true;
+    notice = "";
+    try {
+      if (config) {
+        config = await api.saveConfig(config);
+        capabilities = await api.getCapabilities();
+      }
+      imageServerStatus = await api.startImageServer();
+      notice = "Managed image server started.";
+    } catch (error) {
+      setError(error);
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function stopImageServer() {
+    busy = true;
+    notice = "";
+    try {
+      imageServerStatus = await api.stopImageServer();
+      notice = "Managed image server stopped.";
+    } catch (error) {
+      setError(error);
+    } finally {
+      busy = false;
+    }
+  }
+
   async function startAutomation() {
     busy = true;
     notice = "";
@@ -242,15 +283,25 @@
 
   onMount(() => {
     void initialize();
-    let unsubscribe: (() => void) | undefined;
+    let unsubscribeJobs: (() => void) | undefined;
+    let unsubscribeImageServer: (() => void) | undefined;
 
     void listen<string>("jobs://updated", () => {
       void refreshJobs();
     }).then((handler) => {
-      unsubscribe = handler;
+      unsubscribeJobs = handler;
     });
 
-    return () => unsubscribe?.();
+    void listen("image-server://updated", () => {
+      void refreshImageServerStatus();
+    }).then((handler) => {
+      unsubscribeImageServer = handler;
+    });
+
+    return () => {
+      unsubscribeJobs?.();
+      unsubscribeImageServer?.();
+    };
   });
 </script>
 
@@ -294,12 +345,15 @@
         {config}
         {capabilities}
         {engineProbe}
+        {imageServerStatus}
         {textModelProbe}
         {automationStatus}
         {busy}
         onSave={() => void saveEngineSettings()}
         onProbe={() => void runEngineProbe()}
         onProbeTextModel={() => void runTextModelProbe()}
+        onStartImageServer={() => void startImageServer()}
+        onStopImageServer={() => void stopImageServer()}
         onStartAutomation={() => void startAutomation()}
       />
     {/if}

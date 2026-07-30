@@ -1,8 +1,10 @@
 use std::{fs, time::Duration};
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
+use chrono::{DateTime, Utc};
 use reqwest::Client;
 use serde_json::{json, Value};
+use tauri::Emitter;
 use tokio::time::{sleep, timeout};
 use uuid::Uuid;
 
@@ -46,6 +48,7 @@ pub async fn probe(config: &EngineConfig) -> Result<EngineProbe, String> {
 
 pub async fn generate(
     state: &AppState,
+    local_job_id: &str,
     request: &GenerationRequest,
     engine: &EngineConfig,
     model: &ModelProfile,
@@ -144,7 +147,23 @@ pub async fn generate(
         "stable-diffusion.cpp server response did not include a job id.".to_string()
     })?;
 
-    let completed = poll_job(&client, &engine.server_url, job_id).await?;
+    let started_at = Utc::now();
+    update_progress(
+        state,
+        local_job_id,
+        ProgressSnapshot::new(12, "Queued on sd-server", Some(0), None),
+    );
+
+    let completed = poll_job(
+        &client,
+        state,
+        local_job_id,
+        &engine.server_url,
+        job_id,
+        request,
+        started_at,
+    )
+    .await?;
     let encoded = completed
         .pointer("/result/images/0/b64_json")
         .and_then(Value::as_str)
@@ -174,7 +193,15 @@ pub async fn generate(
     ))
 }
 
-async fn poll_job(client: &Client, base_url: &str, job_id: &str) -> Result<Value, String> {
+async fn poll_job(
+    client: &Client,
+    state: &AppState,
+    local_job_id: &str,
+    base_url: &str,
+    job_id: &str,
+    request: &GenerationRequest,
+    started_at: DateTime<Utc>,
+) -> Result<Value, String> {
     let poll_url = endpoint(base_url, &format!("/sdcpp/v1/jobs/{job_id}"))?;
     timeout(Duration::from_secs(1800), async {
         loop {
@@ -201,7 +228,19 @@ async fn poll_job(client: &Client, base_url: &str, job_id: &str) -> Result<Value
                 .and_then(Value::as_str)
                 .unwrap_or_default()
             {
-                "completed" => return Ok(job),
+                "completed" => {
+                    update_progress(
+                        state,
+                        local_job_id,
+                        ProgressSnapshot::new(
+                            99,
+                            "Saving output",
+                            Some(elapsed_seconds(started_at)),
+                            Some(0),
+                        ),
+                    );
+                    return Ok(job);
+                }
                 "failed" | "cancelled" => {
                     let message = job
                         .pointer("/error/message")
@@ -209,12 +248,140 @@ async fn poll_job(client: &Client, base_url: &str, job_id: &str) -> Result<Value
                         .unwrap_or("server job did not complete");
                     return Err(format!("stable-diffusion.cpp server job failed: {message}"));
                 }
-                _ => sleep(Duration::from_secs(2)).await,
+                _ => {
+                    let snapshot =
+                        progress_from_logs(&state.image_server_logs(), request, started_at);
+                    update_progress(state, local_job_id, snapshot);
+                    sleep(Duration::from_secs(2)).await;
+                }
             }
         }
     })
     .await
     .map_err(|_| "stable-diffusion.cpp server job timed out after 30 minutes.".to_string())?
+}
+
+struct ProgressSnapshot {
+    progress: u8,
+    phase: String,
+    elapsed_seconds: Option<u64>,
+    eta_seconds: Option<u64>,
+}
+
+impl ProgressSnapshot {
+    fn new(
+        progress: u8,
+        phase: impl Into<String>,
+        elapsed_seconds: Option<u64>,
+        eta_seconds: Option<u64>,
+    ) -> Self {
+        Self {
+            progress,
+            phase: phase.into(),
+            elapsed_seconds,
+            eta_seconds,
+        }
+    }
+}
+
+fn update_progress(state: &AppState, local_job_id: &str, snapshot: ProgressSnapshot) {
+    let _ = state.update_job(local_job_id, |job| {
+        job.progress = snapshot.progress.min(99);
+        job.phase = snapshot.phase;
+        job.elapsed_seconds = snapshot.elapsed_seconds;
+        job.eta_seconds = snapshot.eta_seconds;
+        job.updated_at = Utc::now();
+    });
+    let _ = state.app().emit("jobs://updated", local_job_id);
+}
+
+fn progress_from_logs(
+    logs: &[String],
+    request: &GenerationRequest,
+    started_at: DateTime<Utc>,
+) -> ProgressSnapshot {
+    let elapsed = elapsed_seconds(started_at);
+    let recent = logs
+        .iter()
+        .rev()
+        .take(80)
+        .cloned()
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    if recent.contains("decode_first_stage completed")
+        || recent.contains("latent 1 decoded")
+        || recent.contains("generating 1 latent images completed")
+    {
+        return with_eta(96, "Decoding image", elapsed);
+    }
+    if recent.contains("decoding 1 latents") {
+        let decode_progress = logs
+            .iter()
+            .rev()
+            .take_while(|line| !line.contains("decoding 1 latents"))
+            .find_map(|line| parse_fraction(line, 138))
+            .map(|(current, total)| 88 + ((current as f32 / total as f32) * 8.0).round() as u8)
+            .unwrap_or(88);
+        return with_eta(decode_progress, "Decoding image", elapsed);
+    }
+    if recent.contains("sampling completed") {
+        return with_eta(86, "Sampling complete", elapsed);
+    }
+    if recent.contains("generating image:") {
+        let step_progress = logs
+            .iter()
+            .rev()
+            .take_while(|line| !line.contains("generating image:"))
+            .find_map(|line| parse_fraction(line, request.steps))
+            .map(|(current, total)| 30 + ((current as f32 / total as f32) * 55.0).round() as u8)
+            .unwrap_or(30);
+        return with_eta(step_progress, "Sampling", elapsed);
+    }
+    if recent.contains("get_learned_condition completed") {
+        return with_eta(28, "Prompt encoded", elapsed);
+    }
+    if recent.contains("generate_image") {
+        return with_eta(22, "Encoding prompt", elapsed);
+    }
+    if recent.contains("listening on:") {
+        return with_eta(16, "Queued on sd-server", elapsed);
+    }
+    with_eta(12, "Submitted to sd-server", elapsed)
+}
+
+fn with_eta(progress: u8, phase: &str, elapsed: u64) -> ProgressSnapshot {
+    let eta = if progress > 5 && progress < 99 {
+        let total = (elapsed as f32 / (progress as f32 / 100.0)).round() as u64;
+        total.checked_sub(elapsed)
+    } else {
+        None
+    };
+    ProgressSnapshot::new(progress, phase, Some(elapsed), eta)
+}
+
+fn elapsed_seconds(started_at: DateTime<Utc>) -> u64 {
+    Utc::now()
+        .signed_duration_since(started_at)
+        .num_seconds()
+        .max(0) as u64
+}
+
+fn parse_fraction(line: &str, expected_total: u32) -> Option<(u32, u32)> {
+    for token in line.split_whitespace() {
+        let Some((left, right)) = token.split_once('/') else {
+            continue;
+        };
+        let current = left.trim().parse::<u32>().ok()?;
+        let total = right
+            .trim_matches(|character: char| !character.is_ascii_digit())
+            .parse::<u32>()
+            .ok()?;
+        if total == expected_total && current <= total {
+            return Some((current, total));
+        }
+    }
+    None
 }
 
 fn prompt_with_lora_triggers(

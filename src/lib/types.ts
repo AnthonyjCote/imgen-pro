@@ -31,6 +31,7 @@ export interface ModelProfile {
 export interface EngineConfig {
   mode: EngineMode;
   binary_path: string;
+  server_binary_path: string;
   server_url: string;
   backend: BackendPreference;
   active_model_id: string;
@@ -89,6 +90,9 @@ export interface GenerationJob {
   request: GenerationRequest;
   status: JobStatus;
   progress: number;
+  phase: string;
+  elapsed_seconds: number | null;
+  eta_seconds: number | null;
   created_at: string;
   updated_at: string;
   output: GeneratedAsset | null;
@@ -102,6 +106,14 @@ export interface EngineProbe {
   binary_path: string;
   summary: string;
   output: string;
+}
+
+export interface ManagedImageServerStatus {
+  running: boolean;
+  pid: number | null;
+  address: string;
+  phase: string;
+  logs: string[];
 }
 
 export interface TextModelProbe {

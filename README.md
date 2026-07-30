@@ -127,7 +127,9 @@ The adapter supports these profile fields:
 
 The frontend submits normalized generation requests and does not construct shell commands.
 
-Server mode avoids reloading the model for every generation. Start the local server before switching Imgen Pro to `stable-diffusion.cpp server`:
+Server mode avoids reloading the model for every generation. Imgen Pro can launch and supervise `sd-server` from the Engine screen when the `sd-server binary path`, `sd-server URL`, model paths, and backend target are configured. The managed server panel shows the PID, current phase, and a live log tail. Running jobs use those logs to show phase, progress, elapsed time, and ETA in the Create queue.
+
+The equivalent manual server command is:
 
 ```bash
 /Users/dev/DEV_TOOLS/stable-diffusion.cpp/build-vulkan/bin/sd-server \

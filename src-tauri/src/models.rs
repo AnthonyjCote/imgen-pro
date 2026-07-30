@@ -58,6 +58,8 @@ pub struct ModelProfile {
 pub struct EngineConfig {
     pub mode: EngineMode,
     pub binary_path: String,
+    #[serde(default)]
+    pub server_binary_path: String,
     #[serde(default = "default_sd_server_url")]
     pub server_url: String,
     pub backend: BackendPreference,
@@ -110,6 +112,7 @@ impl Default for AppConfig {
             engine: EngineConfig {
                 mode: EngineMode::Mock,
                 binary_path: String::new(),
+                server_binary_path: String::new(),
                 server_url: default_sd_server_url(),
                 backend: BackendPreference::Vulkan,
                 active_model_id: "primary-model".to_string(),
@@ -198,11 +201,21 @@ pub struct GenerationJob {
     pub request: GenerationRequest,
     pub status: JobStatus,
     pub progress: u8,
+    #[serde(default = "default_job_phase")]
+    pub phase: String,
+    #[serde(default)]
+    pub elapsed_seconds: Option<u64>,
+    #[serde(default)]
+    pub eta_seconds: Option<u64>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub output: Option<GeneratedAsset>,
     pub error_message: Option<String>,
     pub logs: Vec<String>,
+}
+
+fn default_job_phase() -> String {
+    "Queued".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -212,6 +225,15 @@ pub struct EngineProbe {
     pub binary_path: String,
     pub summary: String,
     pub output: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ManagedImageServerStatus {
+    pub running: bool,
+    pub pid: Option<u32>,
+    pub address: String,
+    pub phase: String,
+    pub logs: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

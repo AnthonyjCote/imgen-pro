@@ -17,6 +17,9 @@ pub fn enqueue(state: AppState, request: GenerationRequest) -> Result<Generation
         request: request.clone(),
         status: JobStatus::Queued,
         progress: 0,
+        phase: "Queued".to_string(),
+        elapsed_seconds: None,
+        eta_seconds: None,
         created_at: now,
         updated_at: now,
         output: None,
@@ -48,6 +51,9 @@ pub fn enqueue(state: AppState, request: GenerationRequest) -> Result<Generation
         let _ = state.update_job(&job_id, |job| {
             job.status = JobStatus::Running;
             job.progress = 8;
+            job.phase = "Starting worker".to_string();
+            job.elapsed_seconds = Some(0);
+            job.eta_seconds = None;
             job.updated_at = Utc::now();
             job.logs.push("Generation worker started.".to_string());
         });
@@ -58,6 +64,8 @@ pub fn enqueue(state: AppState, request: GenerationRequest) -> Result<Generation
                 let _ = state.update_job(&job_id, |job| {
                     job.status = JobStatus::Completed;
                     job.progress = 100;
+                    job.phase = "Completed".to_string();
+                    job.eta_seconds = Some(0);
                     job.updated_at = Utc::now();
                     job.output = Some(asset);
                     job.error_message = None;
@@ -94,6 +102,7 @@ pub fn cancel(state: &AppState, id: &str) -> Result<bool, String> {
 
     state.update_job(id, |job| {
         job.status = JobStatus::Cancelled;
+        job.phase = "Cancelled".to_string();
         job.updated_at = Utc::now();
         job.logs.push("Job cancelled before execution.".to_string());
     })?;
@@ -105,6 +114,8 @@ fn fail_job(state: &AppState, id: &str, message: &str) -> Result<(), String> {
     state.update_job(id, |job| {
         job.status = JobStatus::Failed;
         job.progress = 100;
+        job.phase = "Failed".to_string();
+        job.eta_seconds = None;
         job.updated_at = Utc::now();
         job.error_message = Some(message.to_string());
         job.logs.push(message.to_string());
